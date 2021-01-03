@@ -12,11 +12,56 @@ public class prop {
     String mailSmtpAuth;
     String mailUser;
     String mailPass;
+    int maxPrice;
+    String loginpage;
+    String filter;
+    String userName;
+    String mailTo;
+
+    public prop() {
+
+
+        try {
+            File file = new File("settings.properties");
+
+            //Properties prop = new Properties();
+            //prop.load(is);
+            Properties prop = new Properties();
+            prop.load(new FileReader(file));
+
+            mailProtocol = prop.getProperty("mail.transport.protocol");
+            mailHost = prop.getProperty("mail.host");
+            mailSmtpAuth = prop.getProperty("mail.smtp.auth");
+            mailUser = prop.getProperty("mail.user");
+            mailPass = prop.getProperty("mail.password");
+            maxPrice = Integer.parseInt(prop.getProperty("maxPrice"));
+            loginpage = prop.getProperty("loginPage");
+            filter = prop.getProperty("filter");
+            userName = prop.getProperty("userName");
+            mailTo = prop.getProperty("mailTo");
+
+        } catch (IOException e) {
+            System.out.println("Ошибка в программе: файл settings.properties не обнаружен!");
+            e.printStackTrace();
+        }
+
+
+    }
+
 
     public String getMailProtocol() {
         return mailProtocol;
     }
+    public String getMailTo() {
+        return mailTo;
+    }
+    public String getUserName() {
+        return userName;
+    }
 
+    public String getFilterUrl() {
+        return filter;
+    }
     public String getMailHost() {
         return mailHost;
     }
@@ -33,31 +78,11 @@ public class prop {
         return mailPass;
     }
 
-    public prop() {
+    public int getMaxPrice() {
+        return maxPrice;
+    }
 
-
-        try
-        {
-            File file = new File("settings.properties");
-
-            //Properties prop = new Properties();
-            //prop.load(is);
-            Properties prop = new Properties();
-            prop.load(new FileReader(file));
-
-            mailProtocol= prop.getProperty("mail.transport.protocol");
-            mailHost= prop.getProperty("mail.host");
-            mailSmtpAuth= prop.getProperty("mail.smtp.auth");
-            mailUser= prop.getProperty("mail.user");
-            mailPass= prop.getProperty("mail.password");
-
-
-
-        } catch (IOException e) {
-            System.out.println("Ошибка в программе: файл settings.properties не обнаружен!");
-            e.printStackTrace();
-        }
-
-
+    public String getLoginpage() {
+        return loginpage;
     }
 }
