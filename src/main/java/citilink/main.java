@@ -6,6 +6,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
@@ -21,7 +26,7 @@ import javax.mail.internet.*;
 public class main {
     private static prop prop2 = new prop();
 
-    public static void main(String[] args) throws InterruptedException, MessagingException {
+    public static void main(String[] args) throws InterruptedException, MessagingException, IOException {
 
 
         System.setProperty("webdriver.gecko.driver", "geckodriver.exe");
@@ -71,6 +76,7 @@ public class main {
                     System.out.println("отправляю");
                     element.submit();
                     System.out.println("нашел и попытался устранить бан");
+                    tgMessage(0, "name", 0, "ban");
                     Thread.sleep(5000);//можно сделать через веит, если захочешь
 
                 } catch (NoSuchElementException n) {
@@ -94,6 +100,7 @@ public class main {
                 if (!userFormated.equalsIgnoreCase(prop2.getUserName())) {
                     System.out.println("не залогинен");
                     SendMail(0, "null", "bad");
+                    tgMessage(0, "null", 0, "login");
                 }
 
                 count++;
@@ -124,11 +131,13 @@ public class main {
 
 
                 int priceInt = Integer.parseInt(priceFormated);
-
+                tgMessage(priceInt, name, count, "info");
 
                 if (priceInt < prop2.getMaxPrice()) {
                     System.out.println("отправка сообщения");
                     SendMail(priceInt, name, "ok");
+                    tgMessage(priceInt, name, count, "ok");
+
                     System.out.println("успешных проверок " + count);
                     System.out.println("таймер " + timer / 1000 + " сек");
                     Thread.sleep(timer);
@@ -183,6 +192,7 @@ public class main {
         } catch (Exception e) {
 
             SendMail(0, "null", "bad");
+            tgMessage(0, "null ", 0, "bad");
         }
     }
 
@@ -279,4 +289,83 @@ public class main {
 //        transport.sendMessage(message, message.getRecipients(Message.RecipientType.TO));
 //        System.out.println("отправил");
 //    }
+
+
+    public static void tgMessage(int price, String name, int count, String mesType) throws IOException {
+
+        System.out.println("пытаюсь отправить сообщение в тг ");
+        // String urlString = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s";
+        String apiToken = prop2.getApiKey();
+        String chatId = prop2.getChannelName();
+        String channelAdm = prop2.getChannelAdm();
+        String text = null;
+
+        switch (mesType) {
+            case "ok":
+                text = channelAdm + "\n" + price + "\n" + name;
+                break;
+            case "info":
+                text = "Самая дешевая карта:\n" + name + "\n" + price
+                        + "\n" +
+                        "проверок после подъема: " + count;
+                break;
+            case "bad":
+                text = channelAdm + " я упал";
+                break;
+            case "login":
+                text = channelAdm + " слетела авторизация";
+                break;
+            case "ban":
+                text = channelAdm + " я смог обойти бан! бан пришел после " + count  + " проверок";
+                break;
+            default:
+                text = "бот никогда не должен вызвать это";
+        }
+
+
+//        if (mesType.equalsIgnoreCase("info")) {
+//            text = "Самая дешевая карта:\n" + name + "\n" + price
+//                    + "\n" +
+//                    "проверок после подъема: " + count;
+//        } else if (mesType.equalsIgnoreCase("ok")) {
+//            text = channelAdm + "\n" + price + "\n" + name;
+//        } else if (mesType.equalsIgnoreCase("bad")) {
+//            text = channelAdm + " я упал";
+//        } else { text="бот никогда не должен вызвать это";}
+        System.out.print("сформировал ");
+        // text = text.replace(" ", "%20");
+        text = URLEncoder.encode(text, "UTF-8");
+        //urlString = String.format(urlString, apiToken, chatId, text);
+        String urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + chatId + "&text=" + text;
+
+
+        URL myURL = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) myURL.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setDoOutput(true);
+        connection.connect();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        StringBuilder results = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            results.append(line);
+        }
+
+        //  connection.disconnect();
+        //    System.out.println(results.toString());
+//        URL url = new URL(urlString);
+//        URLConnection conn = url.openConnection();
+//        System.out.print("есть коннект ");
+//        StringBuilder sb = new StringBuilder();
+//        InputStream is = new BufferedInputStream(conn.getInputStream());
+//        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+//        String inputLine = "";
+//        while ((inputLine = br.readLine()) != null) {
+//            sb.append(inputLine);
+//        }
+//        String response = sb.toString();
+        // System.out.println("tg: " + response);
+    }
+
+
 }

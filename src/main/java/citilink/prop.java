@@ -18,6 +18,9 @@ public class prop {
     String filter;
     String userName;
     String mailTo;
+    String apiKey;
+    String channelName;
+    String channelAdm;
 
     public prop() {
 
@@ -41,6 +44,9 @@ public class prop {
             filter = prop.getProperty("filter");
             userName = prop.getProperty("userName");
             mailTo = prop.getProperty("mailTo");
+            apiKey = prop.getProperty("apikey");
+            channelName = prop.getProperty("channelName");
+            channelAdm = prop.getProperty("channelAdm");
 
 
         } catch (IOException e) {
@@ -51,6 +57,17 @@ public class prop {
 
     }
 
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public String getChannelName() {
+        return channelName;
+    }
+
+    public String getChannelAdm() {
+        return channelAdm;
+    }
 
     public String getMailProtocol() {
         return mailProtocol;
