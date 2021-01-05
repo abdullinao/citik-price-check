@@ -13,6 +13,7 @@ public class prop {
     String mailUser;
     String mailPass;
     int maxPrice;
+    int timer;
     String loginpage;
     String filter;
     String userName;
@@ -35,10 +36,12 @@ public class prop {
             mailUser = prop.getProperty("mail.user");
             mailPass = prop.getProperty("mail.password");
             maxPrice = Integer.parseInt(prop.getProperty("maxPrice"));
+            timer = Integer.parseInt(prop.getProperty("timer"));
             loginpage = prop.getProperty("loginPage");
             filter = prop.getProperty("filter");
             userName = prop.getProperty("userName");
             mailTo = prop.getProperty("mailTo");
+
 
         } catch (IOException e) {
             System.out.println("Ошибка в программе: файл settings.properties не обнаружен!");
@@ -52,9 +55,15 @@ public class prop {
     public String getMailProtocol() {
         return mailProtocol;
     }
+
+    public int getTimer() {
+        return timer;
+    }
+
     public String getMailTo() {
         return mailTo;
     }
+
     public String getUserName() {
         return userName;
     }
@@ -62,6 +71,7 @@ public class prop {
     public String getFilterUrl() {
         return filter;
     }
+
     public String getMailHost() {
         return mailHost;
     }
