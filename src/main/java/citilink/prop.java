@@ -21,6 +21,9 @@ public class prop {
     String apiKey;
     String channelName;
     String channelAdm;
+    String logChannelName;
+    String city;
+
 
     public prop() {
 
@@ -47,6 +50,8 @@ public class prop {
             apiKey = prop.getProperty("apikey");
             channelName = prop.getProperty("channelName");
             channelAdm = prop.getProperty("channelAdm");
+            logChannelName = prop.getProperty("logChannelName");
+            city = prop.getProperty("city");
 
 
         } catch (IOException e) {
@@ -60,6 +65,9 @@ public class prop {
     public String getApiKey() {
         return apiKey;
     }
+    public String getCity() {
+        return city;
+    }
 
     public String getChannelName() {
         return channelName;
@@ -67,6 +75,9 @@ public class prop {
 
     public String getChannelAdm() {
         return channelAdm;
+    }
+    public String getlogChannelName() {
+        return logChannelName;
     }
 
     public String getMailProtocol() {

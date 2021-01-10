@@ -2,19 +2,11 @@ package citilink;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.Date;
 import java.util.Properties;
-import java.util.Scanner;
-
 import javax.mail.*;
 import javax.mail.internet.*;
 
@@ -30,7 +22,7 @@ public class main {
 
 
         System.setProperty("webdriver.gecko.driver", "geckodriver.exe");
-        Scanner sc = new Scanner(System.in);
+
         // Создаем экземпляр WebDriver
         // Следует отметить что скрипт работает с интерфейсом,
         // а не с реализацией.
@@ -39,13 +31,17 @@ public class main {
         String loginUrl = prop2.getLoginpage();
         driver.get(loginUrl);
         Thread.sleep(4000);
+
+
         // Находим элемент по атрибуту name
+
         WebElement element = driver.findElement(By.xpath("//div[contains(@class,'Captcha__image')]"));
 
         JavascriptExecutor executor = (JavascriptExecutor) driver;
         Object elementAttributes = executor.executeScript("var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) { items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value }; return items;", element);
 
         System.out.println(elementAttributes.toString());
+
 
         while (driver.getCurrentUrl().equals(loginUrl)) {
             System.out.println("Жду пока пройдет авторизация");
@@ -57,14 +53,45 @@ public class main {
         // String searchUrl = "";
 
         int count = 0;
+        int banCount = 0;
         int timer = prop2.getTimer();
+        String productCount = "";
+        boolean productsEmpty;
+        String priceFormated = "";
+        String name = "";
+        int priceInt;
         try {
 
             while (1 == 1) {
+                try {
+                    driver.get(prop2.getFilterUrl());
+                    System.out.println("Жду пока страница прогрузится...");
+                    Thread.sleep(5000);//можно сделать через веит, если захочешь
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    tgMessage(0, "null ", 0, "bad", "null", e.toString(), 0, "null");
 
-                driver.get(prop2.getFilterUrl());
-                System.out.println("Жду пока страница прогрузится...");
-                Thread.sleep(5000);//можно сделать через веит, если захочешь
+                }
+//проверка на отсутсвтие товаров
+                try {
+                    element = driver.findElement(By.xpath("//h2[contains(@class,'ProductCardCategoryList__empty-list-title')]"));//ищем колво товаров в категории
+                    productsEmpty = true;
+                } catch (NoSuchElementException n) {
+                    System.out.println("товары есть");
+                    productsEmpty = false;
+                }
+
+
+                try {
+                    element = driver.findElement(By.xpath("//div[contains(@class,'Subcategory__count js--Subcategory__count')]"));//ищем колво товаров в категории
+                    String productCountUnFormated = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].innerHTML;", element);
+                    productCount = productCountUnFormated.replaceAll("\\s+", "");
+                    productCount = productCount.replaceAll("товаров|товар|товара|а", "");//буква "а" непобедима
+                 } catch (NoSuchElementException n) {
+                    System.out.println("не нашел товаров");
+                    n.printStackTrace();
+                }
+
 
                 System.out.println("проверяю на бан...");
 
@@ -76,12 +103,30 @@ public class main {
                     System.out.println("отправляю");
                     element.submit();
                     System.out.println("нашел и попытался устранить бан");
-                    tgMessage(0, "name", 0, "ban");
+                    banCount++;
+                    System.out.println("ban coubt" + banCount);
+                    tgMessage(0, "name", count, "ban", "null", "null", banCount, "null");
                     Thread.sleep(5000);//можно сделать через веит, если захочешь
 
                 } catch (NoSuchElementException n) {
                     System.out.println("не нашел бан");
                 }
+
+
+                //проверка города
+
+                try {
+                    System.out.println("ищу авторизацию");
+                    element = driver.findElement(By.xpath("//button[contains(@class,'js--CitiesSearch-trigger MainHeader__open-text TextWithIcon')]"));//
+                    //пользователя в случае, если есть авторизация на сайте
+                } catch (NoSuchElementException n) {
+                    System.out.println("не нашел город");
+                }
+
+
+                String cityUnFormated = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].innerHTML;", element);
+                String cityFormated = cityUnFormated.replaceAll("\\s+", "");
+                System.out.println(cityFormated);
 
 
 //проверка что авторизация не слетела
@@ -100,7 +145,7 @@ public class main {
                 if (!userFormated.equalsIgnoreCase(prop2.getUserName())) {
                     System.out.println("не залогинен");
                     SendMail(0, "null", "bad");
-                    tgMessage(0, "null", 0, "login");
+                    tgMessage(0, "null", 0, "login", "null", "null", 0, "null");
                 }
 
                 count++;
@@ -120,32 +165,37 @@ public class main {
                 // System.out.println(products.get(0));
                 System.out.println("ищу самую дешевую карточку...");
 
-                element = driver.findElement(By.xpath("//a[contains(@class,' ProductCardVertical__name  Link js--Link Link_type_default')]"));
-                String name = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].innerHTML;", element);
-                System.out.println("самая дешевая карта: " + name);
+                try {
+                    element = driver.findElement(By.xpath("//a[contains(@class,' ProductCardVertical__name  Link js--Link Link_type_default')]"));
+                    name = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].innerHTML;", element);
+                    System.out.println("Самый дешевый товар фильтра: " + name);
 
-                element = driver.findElement(By.xpath("//span[contains(@class,'ProductCardVerticalPrice__price-current_current-price')]"));
-                String price = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].innerHTML;", element);
-                String priceFormated = price.replaceAll("\\s+", "");
-                System.out.println("цена: " + price.replaceAll("\\s+", ""));
+                    element = driver.findElement(By.xpath("//span[contains(@class,'ProductCardVerticalPrice__price-current_current-price')]"));
+                    String price = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].innerHTML;", element);
+                    priceFormated = price.replaceAll("\\s+", "");
+                    System.out.println("цена: " + price.replaceAll("\\s+", ""));
+                    priceInt = Integer.parseInt(priceFormated);
+                    tgMessage(priceInt, name, count, "info", cityFormated, "null", banCount, productCount);
 
+                    if (priceInt < prop2.getMaxPrice()) {
+                        System.out.println("отправка сообщения");
+                        SendMail(priceInt, name, "ok");
+                        tgMessage(priceInt, name, count, "ok", "null", "null", 0, "null");
 
-                int priceInt = Integer.parseInt(priceFormated);
-                tgMessage(priceInt, name, count, "info");
+                        System.out.println("успешных проверок " + count);
+                        System.out.println("таймер " + timer / 1000 + " сек");
+                        Thread.sleep(timer);
+                    } else {
+                        System.out.println("нет карт дешевле " + prop2.getMaxPrice());
+                        System.out.println("успешных проверок " + count);
+                        System.out.println("таймер " + timer / 1000 + " сек");
+                        Thread.sleep(timer);
 
-                if (priceInt < prop2.getMaxPrice()) {
-                    System.out.println("отправка сообщения");
-                    SendMail(priceInt, name, "ok");
-                    tgMessage(priceInt, name, count, "ok");
+                    }
 
-                    System.out.println("успешных проверок " + count);
-                    System.out.println("таймер " + timer / 1000 + " сек");
-                    Thread.sleep(timer);
-                } else {
-                    System.out.println("нет карт дешевле " + prop2.getMaxPrice());
-                    System.out.println("успешных проверок " + count);
-                    System.out.println("таймер " + timer / 1000 + " сек");
-                    Thread.sleep(timer);
+                } catch (NoSuchElementException n) {
+                    System.out.println("нет товаров");
+                    tgMessage(0, "null ", count, "noProduct", "n", n.toString(), 0, "null");
 
                 }
 
@@ -190,9 +240,10 @@ public class main {
 //        element.sendKeys(kaptcha);
             }
         } catch (Exception e) {
+            e.printStackTrace();
 
             SendMail(0, "null", "bad");
-            tgMessage(0, "null ", 0, "bad");
+            tgMessage(0, "null ", 0, "bad", "null", e.toString(), 0, "null");
         }
     }
 
@@ -218,7 +269,7 @@ public class main {
             //устанавливаем тему письма
             message.setSubject("[От бота] " + price + " руб! " + "Дешевка в ситилинке!");
 //добавляем текст письма
-            message.setText("В ситилинке появилась дешевая карта! \n"
+            message.setText("В ситилинке появился дешевый товар по фильтру! \n"
                     + Name + "\n" + "цена: " + price +
                     "\nссылка(удалить пробел)    vk. cc/bWNbp9");
         } else {
@@ -291,36 +342,59 @@ public class main {
 //    }
 
 
-    public static void tgMessage(int price, String name, int count, String mesType) throws IOException {
+    public static void tgMessage(int price, String name, int count, String mesType, String city, String e, int banCount, String productCount) throws IOException {
+        try {
+            String trash = "\n*****************************************\n";
+            System.out.println("пытаюсь отправить сообщение в тг ");
+            // String urlString = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s";
+            String apiToken = prop2.getApiKey();
+            String chatId = prop2.getChannelName();
+            String channelAdm = prop2.getChannelAdm();
+            String logChannelName = prop2.getlogChannelName();
+            String text = null;
+            String urlString = null;
+            switch (mesType) {
+                case "ok":
+                    text = channelAdm + "\n" + price + "\n" + name;
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + chatId + "&text=";
 
-        System.out.println("пытаюсь отправить сообщение в тг ");
-        // String urlString = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s";
-        String apiToken = prop2.getApiKey();
-        String chatId = prop2.getChannelName();
-        String channelAdm = prop2.getChannelAdm();
-        String text = null;
+                    break;
+                case "info":
+                    System.out.println("bancount tg" + banCount);
+                    text = "Цена: " + price + "\nИмя: " + name +
+                            ".\n" +
+                            "проверок после подъема: " + count + ". " + "Обходов бана: " + banCount + "\nТоваров в фильтре: " + productCount + "." + "\nРегион: " + city;
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
+                    break;
+                case "bad":
+                    text = trash + channelAdm + " упал(" + "\n" + e + trash;
+                    if (text.length() > 3999) {
+                        text = text.substring(0, 3998);
+                    }
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
 
-        switch (mesType) {
-            case "ok":
-                text = channelAdm + "\n" + price + "\n" + name;
-                break;
-            case "info":
-                text = "Самая дешевая карта:\n" + name + "\n" + price
-                        + "\n" +
-                        "проверок после подъема: " + count;
-                break;
-            case "bad":
-                text = channelAdm + " я упал";
-                break;
-            case "login":
-                text = channelAdm + " слетела авторизация";
-                break;
-            case "ban":
-                text = channelAdm + " я смог обойти бан! бан пришел после " + count  + " проверок";
-                break;
-            default:
-                text = "бот никогда не должен вызвать это";
-        }
+                    break;
+                case "login":
+                    text = trash + channelAdm + " слетела авторизация" + trash;
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
+
+                    break;
+                case "ban":
+                    text = trash + channelAdm + " я смог обойти бан! бан пришел после " + count + " проверок" + trash;
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
+
+                    break;
+                case "noProduct":
+                    text = trash + channelAdm + " нет товаров или произошла непредусмотренная ошибка. " + "Проверок после подъема: " + count + trash + "\nДля инфо:\n" + e;
+                    if (text.length() > 3999) {
+                        text = text.substring(0, 3998);
+                    }
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
+
+                    break;
+                default:
+                    text = "бот никогда не должен вызвать это";
+            }
 
 
 //        if (mesType.equalsIgnoreCase("info")) {
@@ -332,27 +406,28 @@ public class main {
 //        } else if (mesType.equalsIgnoreCase("bad")) {
 //            text = channelAdm + " я упал";
 //        } else { text="бот никогда не должен вызвать это";}
-        System.out.print("сформировал ");
-        // text = text.replace(" ", "%20");
-        text = URLEncoder.encode(text, "UTF-8");
-        //urlString = String.format(urlString, apiToken, chatId, text);
-        String urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + chatId + "&text=" + text;
+            System.out.print("сформировал ");
+            // text = text.replace(" ", "%20");
+            text = URLEncoder.encode(text, "UTF-8");
+            //urlString = String.format(urlString, apiToken, chatId, text);
+
+            urlString = urlString + text;
 
 
-        URL myURL = new URL(urlString);
-        HttpURLConnection connection = (HttpURLConnection) myURL.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setDoOutput(true);
-        connection.connect();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        StringBuilder results = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            results.append(line);
-        }
+            URL myURL = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) myURL.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setDoOutput(true);
+            connection.connect();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder results = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                results.append(line);
+            }
 
-        //  connection.disconnect();
-        //    System.out.println(results.toString());
+            //  connection.disconnect();
+            //    System.out.println(results.toString());
 //        URL url = new URL(urlString);
 //        URLConnection conn = url.openConnection();
 //        System.out.print("есть коннект ");
@@ -364,8 +439,10 @@ public class main {
 //            sb.append(inputLine);
 //        }
 //        String response = sb.toString();
-        // System.out.println("tg: " + response);
+            // System.out.println("tg: " + response);
+        } catch (ConnectException connectException) {
+            connectException.printStackTrace();
+        }
     }
-
 
 }
