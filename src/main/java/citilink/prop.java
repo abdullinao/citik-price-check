@@ -7,22 +7,23 @@ import java.util.Properties;
 
 public class prop {
 
-    String mailProtocol;
-    String mailHost;
-    String mailSmtpAuth;
-    String mailUser;
-    String mailPass;
-    int maxPrice;
-    int timer;
-    String loginpage;
-    String filter;
-    String userName;
-    String mailTo;
-    String apiKey;
-    String channelName;
-    String channelAdm;
-    String logChannelName;
-    String city;
+ private String mailProtocol;
+ private String mailHost;
+ private String mailSmtpAuth;
+ private String mailUser;
+ private String mailPass;
+ private int maxPrice;
+ private int minPrice;
+ private int timer;
+ private String loginpage;
+ private String filter;
+ private String userName;
+ private String mailTo;
+ private String apiKey;
+ private String channelName;
+ private String channelAdm;
+ private String logChannelName;
+ private String city;
 
 
     public prop() {
@@ -42,6 +43,7 @@ public class prop {
             mailUser = prop.getProperty("mail.user");
             mailPass = prop.getProperty("mail.password");
             maxPrice = Integer.parseInt(prop.getProperty("maxPrice"));
+            minPrice = Integer.parseInt(prop.getProperty("minPrice"));
             timer = Integer.parseInt(prop.getProperty("timer"));
             loginpage = prop.getProperty("loginPage");
             filter = prop.getProperty("filter");
@@ -64,6 +66,9 @@ public class prop {
 
     public String getApiKey() {
         return apiKey;
+    }
+    public int getminPrice() {
+        return minPrice;
     }
     public String getCity() {
         return city;

@@ -16,7 +16,7 @@ import javax.mail.internet.*;
 
 
 public class main {
-    private static prop prop2 = new prop();
+    private static final prop prop2 = new prop();
 
     public static void main(String[] args) throws InterruptedException, MessagingException, IOException {
 
@@ -49,17 +49,30 @@ public class main {
         }
 
         System.out.println("Пiймав на авторизации");
-
-        // String searchUrl = "";
-
         int count = 0;
         int banCount = 0;
+        int downCount = 0;
+        // String searchUrl = "";
+        check(driver, element, count, banCount, downCount);
+
+    }
+
+    //first run 1 = true ; 0 = false
+    public static void check(WebDriver driver, WebElement element, int count2, int banCount2, int downCount) throws IOException, MessagingException, InterruptedException {
+
+
+        int count = count2;
+        int downC = downCount;
+        int banCount = banCount2;
         int timer = prop2.getTimer();
         String productCount = "";
         boolean productsEmpty;
         String priceFormated = "";
         String name = "";
         int priceInt;
+
+
+        int minPrice = prop2.getminPrice();
         try {
 
             while (1 == 1) {
@@ -69,7 +82,7 @@ public class main {
                     Thread.sleep(5000);//можно сделать через веит, если захочешь
                 } catch (Exception e) {
                     e.printStackTrace();
-                    tgMessage(0, "null ", 0, "bad", "null", e.toString(), 0, "null");
+                    tgMessage(0, "null ", 0, "bad", "null", e.toString(), 0, "null", 0);
 
                 }
 //проверка на отсутсвтие товаров
@@ -87,7 +100,7 @@ public class main {
                     String productCountUnFormated = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].innerHTML;", element);
                     productCount = productCountUnFormated.replaceAll("\\s+", "");
                     productCount = productCount.replaceAll("товаров|товар|товара|а", "");//буква "а" непобедима
-                 } catch (NoSuchElementException n) {
+                } catch (NoSuchElementException n) {
                     System.out.println("не нашел товаров");
                     n.printStackTrace();
                 }
@@ -105,7 +118,7 @@ public class main {
                     System.out.println("нашел и попытался устранить бан");
                     banCount++;
                     System.out.println("ban coubt" + banCount);
-                    tgMessage(0, "name", count, "ban", "null", "null", banCount, "null");
+                    tgMessage(0, "name", count, "ban", "null", "null", banCount, "null", 0);
                     Thread.sleep(5000);//можно сделать через веит, если захочешь
 
                 } catch (NoSuchElementException n) {
@@ -145,7 +158,7 @@ public class main {
                 if (!userFormated.equalsIgnoreCase(prop2.getUserName())) {
                     System.out.println("не залогинен");
                     SendMail(0, "null", "bad");
-                    tgMessage(0, "null", 0, "login", "null", "null", 0, "null");
+                    tgMessage(0, "null", 0, "login", "null", "null", 0, "null", 0);
                 }
 
                 count++;
@@ -175,12 +188,12 @@ public class main {
                     priceFormated = price.replaceAll("\\s+", "");
                     System.out.println("цена: " + price.replaceAll("\\s+", ""));
                     priceInt = Integer.parseInt(priceFormated);
-                    tgMessage(priceInt, name, count, "info", cityFormated, "null", banCount, productCount);
+                    tgMessage(priceInt, name, count, "info", cityFormated, "null", banCount, productCount, downCount);
 
-                    if (priceInt < prop2.getMaxPrice()) {
+                    if (priceInt < prop2.getMaxPrice() & priceInt > minPrice) {//тут происходит уведомление об успешном нахождении
                         System.out.println("отправка сообщения");
                         SendMail(priceInt, name, "ok");
-                        tgMessage(priceInt, name, count, "ok", "null", "null", 0, "null");
+                        tgMessage(priceInt, name, count, "ok", "null", "null", 0, "null", 0);
 
                         System.out.println("успешных проверок " + count);
                         System.out.println("таймер " + timer / 1000 + " сек");
@@ -195,7 +208,7 @@ public class main {
 
                 } catch (NoSuchElementException n) {
                     System.out.println("нет товаров");
-                    tgMessage(0, "null ", count, "noProduct", "n", n.toString(), 0, "null");
+                    tgMessage(0, "null ", count, "noProduct", "n", n.toString(), 0, "null", 0);
 
                 }
 
@@ -243,59 +256,70 @@ public class main {
             e.printStackTrace();
 
             SendMail(0, "null", "bad");
-            tgMessage(0, "null ", 0, "bad", "null", e.toString(), 0, "null");
+            tgMessage(0, "null ", 0, "bad", "null", e.toString(), 0, "null", 0);
+
+
         }
+        tgMessage(0, "null ", count, "reborn", "null", "s", 0, "null", 0);
+        driver.get("https://yandex.ru/");
+        Thread.sleep(5000);
+        driver.navigate().refresh();
+        downC++;
+        check(driver, element, count, banCount, downC);
     }
 
 
     public static void SendMail(int price, String Name, String MesType) throws MessagingException {
-        Properties MailProps = new Properties();
-        MailProps.put("mail.transport.protocol", prop2.getMailProtocol());
-        MailProps.put("mail.smtp.host", prop2.getMailHost());
-        MailProps.put("mail.smtp.auth", prop2.getMailSmtpAuth());
-        // MailProps.put("mail.smtp.sendpartial", "true");
-        MailProps.put("mail.smtp.ssl.enable", "true");
-        MailProps.put("mail.user", prop2.getMailUser());
-        MailProps.put("mail.password", prop2.getMailPass());
+        try {
+            Properties MailProps = new Properties();
+            MailProps.put("mail.transport.protocol", prop2.getMailProtocol());
+            MailProps.put("mail.smtp.host", prop2.getMailHost());
+            MailProps.put("mail.smtp.auth", prop2.getMailSmtpAuth());
+            // MailProps.put("mail.smtp.sendpartial", "true");
+            MailProps.put("mail.smtp.ssl.enable", "true");
+            MailProps.put("mail.user", prop2.getMailUser());
+            MailProps.put("mail.password", prop2.getMailPass());
 
-        System.out.println("получаю сессию для почты");
-        Session session = Session.getDefaultInstance(MailProps);
-        //создаем сообщение
-        System.out.println("делаю письмо");
-        MimeMessage message = new MimeMessage(session);
+            System.out.println("получаю сессию для почты");
+            Session session = Session.getDefaultInstance(MailProps);
+            //создаем сообщение
+            System.out.println("делаю письмо");
+            MimeMessage message = new MimeMessage(session);
 
-        //генерация тела и заголовка в зависимости от типа
-        if (MesType.equalsIgnoreCase("ok")) {
-            //устанавливаем тему письма
-            message.setSubject("[От бота] " + price + " руб! " + "Дешевка в ситилинке!");
+            //генерация тела и заголовка в зависимости от типа
+            if (MesType.equalsIgnoreCase("ok")) {
+                //устанавливаем тему письма
+                message.setSubject("[От бота] " + price + " руб! " + "Дешевка в ситилинке!");
 //добавляем текст письма
-            message.setText("В ситилинке появился дешевый товар по фильтру! \n"
-                    + Name + "\n" + "цена: " + price +
-                    "\nссылка(удалить пробел)    vk. cc/bWNbp9");
-        } else {
-            message.setSubject("[От бота] Нужно участие человека");
-            message.setText("бот не работает!");
-        }
+                message.setText("В ситилинке появился дешевый товар по фильтру! \n"
+                        + Name + "\n" + "цена: " + price +
+                        "\nссылка(удалить пробел)    vk. cc/bWNbp9");
+            } else {
+                message.setSubject("[От бота] Нужно участие человека");
+                message.setText("бот не работает!");
+            }
 //указываем получателя
-        String[] mails = prop2.getMailTo().split(",");
-        for (String mail : mails) {
-            System.out.println("Готовлю письмо для " + mail);
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress(mail));
-        }
-        //message.addRecipient(Message.RecipientType.TO, new InternetAddress(prop2.getMailTo()));
+            String[] mails = prop2.getMailTo().split(",");
+            for (String mail : mails) {
+                System.out.println("Готовлю письмо для " + mail);
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(mail));
+            }
+            //message.addRecipient(Message.RecipientType.TO, new InternetAddress(prop2.getMailTo()));
 //        message.addRecipient(Message.RecipientType.TO, new InternetAddress("ceo@devcorp.ru"));
 //        message.addRecipient(Message.RecipientType.TO, new InternetAddress("info@devcorp.ru"));
 
 //указываем дату отправления
-        message.setSentDate(new Date());
-        System.out.println("отправляю");
-        Transport transport = session.getTransport();
-        System.out.println("получил транспорт");
-        transport.connect(prop2.getMailHost(), 465, prop2.getMailUser(), prop2.getMailPass());
-        System.out.println("получил коннект");
-        transport.sendMessage(message, message.getRecipients(Message.RecipientType.TO));
-        System.out.println("отправил");
-
+            message.setSentDate(new Date());
+            System.out.println("отправляю");
+            Transport transport = session.getTransport();
+            System.out.println("получил транспорт");
+            transport.connect(prop2.getMailHost(), 465, prop2.getMailUser(), prop2.getMailPass());
+            System.out.println("получил коннект");
+            transport.sendMessage(message, message.getRecipients(Message.RecipientType.TO));
+            System.out.println("отправил");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -342,7 +366,8 @@ public class main {
 //    }
 
 
-    public static void tgMessage(int price, String name, int count, String mesType, String city, String e, int banCount, String productCount) throws IOException {
+    public static void tgMessage(int price, String name, int count, String mesType, String city, String e,
+                                 int banCount, String productCount, int downcount) throws IOException {
         try {
             String trash = "\n*****************************************\n";
             System.out.println("пытаюсь отправить сообщение в тг ");
@@ -363,8 +388,10 @@ public class main {
                     System.out.println("bancount tg" + banCount);
                     text = "Цена: " + price + "\nИмя: " + name +
                             ".\n" +
-                            "проверок после подъема: " + count + ". " + "Обходов бана: " + banCount + "\nТоваров в фильтре: " + productCount + "." + "\nРегион: " + city;
-                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
+                            "проверок после подъема: " + count + ". " + "Обходов бана: " + banCount +
+                            "\nТоваров в фильтре: " + productCount + "." + "\nРегион: " + city + "\nКритических ошибок: " + downcount;
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" +
+                            logChannelName + "&text=";
                     break;
                 case "bad":
                     text = trash + channelAdm + " упал(" + "\n" + e + trash;
@@ -379,11 +406,22 @@ public class main {
                     urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
 
                     break;
+
                 case "ban":
                     text = trash + channelAdm + " я смог обойти бан! бан пришел после " + count + " проверок" + trash;
                     urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
 
                     break;
+
+                case "reborn":
+                    text = trash + channelAdm + " сделал попытку переподъёма!" + "\nПроверок после подъема: " + count + trash;
+                    if (text.length() > 3999) {
+                        text = text.substring(0, 3998);
+                    }
+                    urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
+
+                    break;
+
                 case "noProduct":
                     text = trash + channelAdm + " нет товаров или произошла непредусмотренная ошибка. " + "Проверок после подъема: " + count + trash + "\nДля инфо:\n" + e;
                     if (text.length() > 3999) {
@@ -392,6 +430,7 @@ public class main {
                     urlString = "https://api.telegram.org/bot" + apiToken + "/sendMessage?chat_id=" + logChannelName + "&text=";
 
                     break;
+
                 default:
                     text = "бот никогда не должен вызвать это";
             }
@@ -440,8 +479,8 @@ public class main {
 //        }
 //        String response = sb.toString();
             // System.out.println("tg: " + response);
-        } catch (ConnectException connectException) {
-            connectException.printStackTrace();
+        } catch (Exception e12) {
+            e12.printStackTrace();
         }
     }
 
